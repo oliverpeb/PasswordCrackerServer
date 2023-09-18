@@ -15,6 +15,7 @@ public class Server
 
     public void Start()
     {
+        int FileNumber = 0;
         _listener.Start();
         Console.WriteLine("Server started on port " + Port);
 
@@ -28,10 +29,21 @@ public class Server
             NetworkStream stream = client.GetStream();
             byte[] buffer = new byte[client.ReceiveBufferSize];
 
-            int bytesRead = stream.Read(buffer, 0, client.ReceiveBufferSize);
+            using (var memoryStream = new System.IO.MemoryStream())
+            {
+                int bytesRead;
+                while ((bytesRead = stream.Read(buffer, 0, buffer.Length)) > 0)
+                {
+                    memoryStream.Write(buffer, 0, bytesRead);
 
-            string clientMessage = Encoding.ASCII.GetString(buffer, 0, bytesRead);
-            Console.WriteLine("Received message: " + clientMessage);
+                }
+
+                
+                string FileName = "Received" + FileNumber + ".txt";
+                FileNumber++;
+                System.IO.File.WriteAllBytes(FileName, memoryStream.ToArray());
+                Console.WriteLine($"File received and saved as {FileName}");
+            }
 
             client.Close();
         }
